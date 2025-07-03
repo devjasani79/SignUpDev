@@ -1,0 +1,15 @@
+.signature-drop {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.signature-icon {
+  cursor: grab;
+  font-size: 24px;
+  background: #e0f7ff;
+  border: 1px dashed #333;
+  padding: 5px 10px;
+  border-radius: 4px;
+  user-select: none;
+  display: inline-block;
+}
