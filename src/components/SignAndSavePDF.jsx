@@ -62,7 +62,7 @@ export default function SignAndSavePDF({ file, previewUrl, docId, onSave }) {
 
       let finalDocId = docId;
       if (docId)  {
-        const uploadRes = await axios.post("/docs/upload", formData);
+        const uploadRes = await axios.post("docs/upload", formData);
         finalDocId = uploadRes.data._id;
       }
 
