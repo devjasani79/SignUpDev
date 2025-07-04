@@ -61,9 +61,7 @@ export default function SignAndSavePDF({ file, previewUrl, docId, onSave }) {
       formData.append("file", new Blob([modifiedPDF], { type: "application/pdf" }), file.name);
 
       let finalDocId = docId;
-      if (docId) {
-        await axios.put(`/docs/${docId}`, formData);
-      } else {
+      if (docId)  {
         const uploadRes = await axios.post("/docs/upload", formData);
         finalDocId = uploadRes.data._id;
       }
