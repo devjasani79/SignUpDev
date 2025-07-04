@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [activeDoc, setActiveDoc] = useState(null);
   const [signingDoc, setSigningDoc] = useState(null);
+
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareTargetDoc, setShareTargetDoc] = useState(null);
   const [recipientEmail, setRecipientEmail] = useState("");
@@ -70,11 +71,13 @@ export default function Dashboard() {
 
   const sendShareEmail = async () => {
     if (!recipientEmail || !shareTargetDoc) return;
+
     try {
-      await axios.post("/share", {
+      const res = await axios.post("/share", {
         documentId: shareTargetDoc._id,
         recipientEmail,
       });
+
       alert("Share link sent successfully!");
     } catch (err) {
       console.error("Failed to send share email", err);
@@ -83,17 +86,17 @@ export default function Dashboard() {
       setShareModalOpen(false);
     }
   };
+const deleteDoc = async (id) => {
+  if (!window.confirm("Are you sure you want to delete this document?")) return;
 
-  const deleteDoc = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this document? This action cannot be undone.")) return;
-    try {
-      await axios.delete(`/docs/${id}`);
-      fetchDocs();
-    } catch (err) {
-      console.error("Failed to delete doc:", err);
-      alert("Delete failed");
-    }
-  };
+  try {
+    await axios.delete(`/docs/${id}`);
+    fetchDocs(); // refresh
+  } catch (err) {
+    console.error("Failed to delete doc:", err);
+    alert("Delete failed");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
@@ -110,6 +113,7 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto py-10 px-6 space-y-10">
+        {/* Upload section */}
         <section className="bg-white p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4">📤 Upload Document</h2>
           <UploadAndPreviewPDF
@@ -136,6 +140,7 @@ export default function Dashboard() {
           )}
         </section>
 
+        {/* Signing section */}
         {signingDoc && (
           <section className="bg-white p-6 rounded-lg shadow-lg">
             <div className="flex justify-between items-center mb-4">
@@ -161,6 +166,7 @@ export default function Dashboard() {
           </section>
         )}
 
+        {/* Document list section */}
         <section>
           <h2 className="text-xl font-semibold mb-4">📚 Saved Documents</h2>
           {loading ? (
@@ -177,11 +183,10 @@ export default function Dashboard() {
                       <p className="text-sm mt-1">
                         Status:{" "}
                         <span
-                          className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
-                            doc.status === "signed"
+                          className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${doc.status === "signed"
                               ? "bg-green-100 text-green-700"
                               : "bg-yellow-100 text-yellow-700"
-                          }`}
+                            }`}
                         >
                           {doc.status || "pending"}
                         </span>
@@ -212,6 +217,7 @@ export default function Dashboard() {
                       >
                         Delete
                       </button>
+
                     </div>
                   </div>
 
@@ -234,6 +240,7 @@ export default function Dashboard() {
         </section>
       </main>
 
+      {/* Share Modal */}
       {shareModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
