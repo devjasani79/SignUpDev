@@ -14,7 +14,6 @@ export default function Dashboard() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [activeDoc, setActiveDoc] = useState(null);
   const [signingDoc, setSigningDoc] = useState(null);
-
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareTargetDoc, setShareTargetDoc] = useState(null);
   const [recipientEmail, setRecipientEmail] = useState("");
@@ -71,19 +70,28 @@ export default function Dashboard() {
 
   const sendShareEmail = async () => {
     if (!recipientEmail || !shareTargetDoc) return;
-
     try {
-      const res = await axios.post("/share", {
+      await axios.post("/share", {
         documentId: shareTargetDoc._id,
         recipientEmail,
       });
-
       alert("Share link sent successfully!");
     } catch (err) {
       console.error("Failed to send share email", err);
       alert(err.response?.data?.message || "Failed to share document");
     } finally {
       setShareModalOpen(false);
+    }
+  };
+
+  const deleteDoc = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this document? This action cannot be undone.")) return;
+    try {
+      await axios.delete(`/docs/${id}`);
+      fetchDocs();
+    } catch (err) {
+      console.error("Failed to delete doc:", err);
+      alert("Delete failed");
     }
   };
 
@@ -102,7 +110,6 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto py-10 px-6 space-y-10">
-        {/* Upload section */}
         <section className="bg-white p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4">📤 Upload Document</h2>
           <UploadAndPreviewPDF
@@ -129,7 +136,6 @@ export default function Dashboard() {
           )}
         </section>
 
-        {/* Signing section */}
         {signingDoc && (
           <section className="bg-white p-6 rounded-lg shadow-lg">
             <div className="flex justify-between items-center mb-4">
@@ -155,7 +161,6 @@ export default function Dashboard() {
           </section>
         )}
 
-        {/* Document list section */}
         <section>
           <h2 className="text-xl font-semibold mb-4">📚 Saved Documents</h2>
           {loading ? (
@@ -201,6 +206,12 @@ export default function Dashboard() {
                       >
                         Send for Signature
                       </button>
+                      <button
+                        onClick={() => deleteDoc(doc._id)}
+                        className="text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
 
@@ -223,7 +234,6 @@ export default function Dashboard() {
         </section>
       </main>
 
-      {/* Share Modal */}
       {shareModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
