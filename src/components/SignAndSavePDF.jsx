@@ -1,3 +1,4 @@
+// components/SignAndSavePDF.jsx
 import { useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
@@ -27,10 +28,7 @@ export default function SignAndSavePDF({ file, previewUrl, docId, onSave }) {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    setSignatures(prev => [
-      ...prev,
-      { page: pageNum, x, y, font: selectedFont.style, text: signatureText }
-    ]);
+    setSignatures(prev => [...prev, { page: pageNum, x, y, font: selectedFont.style, text: signatureText }]);
   };
 
   const handleSave = async () => {
@@ -47,17 +45,15 @@ export default function SignAndSavePDF({ file, previewUrl, docId, onSave }) {
       const pages = pdfDoc.getPages();
 
       pages.forEach((page, idx) => {
-        signatures
-          .filter(s => s.page === idx + 1)
-          .forEach(sig => {
-            page.drawText(sig.text, {
-              x: sig.x,
-              y: page.getHeight() - sig.y,
-              size: 26,
-              font: helv,
-              color: rgb(0.1, 0.1, 0.8)
-            });
+        signatures.filter(s => s.page === idx + 1).forEach(sig => {
+          page.drawText(sig.text, {
+            x: sig.x,
+            y: page.getHeight() - sig.y,
+            size: 26,
+            font: helv,
+            color: rgb(0.1, 0.1, 0.8),
           });
+        });
       });
 
       const modifiedPDF = await pdfDoc.save();
@@ -65,24 +61,23 @@ export default function SignAndSavePDF({ file, previewUrl, docId, onSave }) {
       formData.append("file", new Blob([modifiedPDF], { type: "application/pdf" }), file.name);
 
       let finalDocId = docId;
-
       if (docId) {
-        await axios.put(`/docs/${docId}`, formData); // must have PUT route
+        await axios.put(`/docs/${docId}`, formData);
       } else {
-        const uploadRes = await axios.post("docs/upload", formData);
+        const uploadRes = await axios.post("/docs/upload", formData);
         finalDocId = uploadRes.data._id;
       }
 
       await axios.post("/signatures", {
         documentId: finalDocId,
-        signatures: signatures.map(({ page, x, y }) => ({ page, x, y }))
+        signatures: signatures.map(({ page, x, y }) => ({ page, x, y })),
       });
 
       alert("Signed PDF saved!");
       onSave?.();
     } catch (err) {
       console.error(err);
-      alert("Save failed: " + (err.response?.data?.error || err.message));
+      alert("Save failed: " + (err.response?.data?.message || err.message));
     } finally {
       setSaving(false);
     }
@@ -104,9 +99,7 @@ export default function SignAndSavePDF({ file, previewUrl, docId, onSave }) {
             <button
               key={f.name}
               onClick={() => setSelectedFont(f)}
-              className={`px-3 py-1 border rounded ${
-                selectedFont.name === f.name ? "bg-blue-600 text-white" : ""
-              }`}
+              className={`px-3 py-1 border rounded ${selectedFont.name === f.name ? "bg-blue-600 text-white" : ""}`}
               style={{ fontFamily: f.style }}
             >
               {signatureText}
@@ -125,64 +118,55 @@ export default function SignAndSavePDF({ file, previewUrl, docId, onSave }) {
         ✍️ {signatureText}
       </div>
 
-      {/* PDF preview and drop zones */}
-      <div className="mt-6 max-h-[80vh] overflow-auto border rounded p-4 bg-white">
+      {/* PDF Viewer & Drop Area */}
+      <div className="mt-6 max-h-[80vh] overflow-auto border rounded p-4 bg-white relative">
         <Document file={previewUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
           {Array.from({ length: numPages }, (_, i) => (
             <div
               key={i}
               className="relative mb-6 border rounded p-2 signature-drop"
-              onDrop={e => {
-                e.preventDefault();
-                handleDrop(e, i + 1);
-              }}
+              onDrop={(e) => { e.preventDefault(); handleDrop(e, i + 1); }}
               onDragOver={e => e.preventDefault()}
               style={{ minHeight: "300px" }}
             >
               <Page pageNumber={i + 1} width={600} />
-              {signatures
-                .filter(s => s.page === i + 1)
-                .map((sig, idx) => (
-                  <div
-                    key={idx}
-                    className="absolute group cursor-move"
-                    style={{
-                      top: sig.y,
-                      left: sig.x,
-                      fontFamily: sig.font,
-                      fontSize: "22px",
-                      color: "#0b3c91",
-                      userSelect: "none"
-                    }}
-                    draggable
-                    onDragStart={() => (dragIndex.current = idx)}
-                    onDragEnd={e => {
-                      const rect = e.currentTarget.offsetParent.getBoundingClientRect();
-                      const x = e.clientX - rect.left;
-                      const y = e.clientY - rect.top;
-                      setSignatures(prev =>
-                        prev.map((s, i) =>
-                          i === dragIndex.current ? { ...s, x, y } : s
-                        )
-                      );
-                      dragIndex.current = null;
-                    }}
+              {signatures.filter(s => s.page === i + 1).map((sig, idx) => (
+                <div
+                  key={idx}
+                  className="absolute group cursor-move"
+                  style={{
+                    top: sig.y,
+                    left: sig.x,
+                    fontFamily: sig.font,
+                    fontSize: "22px",
+                    color: "#0b3c91",
+                    userSelect: "none",
+                  }}
+                  draggable
+                  onDragStart={() => (dragIndex.current = idx)}
+                  onDragEnd={(e) => {
+                    const rect = e.currentTarget.offsetParent.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    setSignatures(prev => prev.map((s, i) => i === dragIndex.current ? { ...s, x, y } : s));
+                    dragIndex.current = null;
+                  }}
+                >
+                  {sig.text}
+                  <button
+                    onClick={() => setSignatures(prev => prev.filter((_, x) => x !== idx))}
+                    className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-1 rounded hidden group-hover:block"
                   >
-                    {sig.text}
-                    <button
-                      onClick={() => setSignatures(prev => prev.filter((_, x) => x !== idx))}
-                      className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-1 rounded hidden group-hover:block"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                    ✕
+                  </button>
+                </div>
+              ))}
             </div>
           ))}
         </Document>
       </div>
 
-      {/* Save button */}
+      {/* Save Button */}
       <button
         onClick={handleSave}
         disabled={saving}
